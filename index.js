@@ -14,6 +14,10 @@ function trim (h) {
   return h.slice(0, 24)
 }
 
+const recip_length = 32+1+16
+function offset(n) {
+  return 32+recip_length*n
+}
 
 exports.box = function (plaintext, external_nonce, keys) {
   var nonce = random(32)
@@ -38,27 +42,10 @@ exports.box = function (plaintext, external_nonce, keys) {
   ])
 }
 
-exports.unbox = function (ciphertext, external_nonce, keys, attempts) {
+exports.unboxKey = function (ciphertext, external_nonce, keys, attempts) {
   var payload_key = null
   var nonce = ciphertext.slice(0, 32)
   var header_nonce = hmac(external_nonce, nonce)
-
-  const recip_length = 32+1+16
-  function offset(n) {
-    return 32+recip_length*n
-  }
-
-  function decrypt (key) {
-    var length = key[32]
-    key = key.slice(0, 32)
-
-    var header_length = offset(length)
-    return unbox(
-      ciphertext.slice(header_length, ciphertext.length),
-      trim(hmac(ciphertext.slice(0, header_length), header_nonce)),
-      key
-    )
-  }
 
   //try each of `keys` `attempts` times
   var header_nonce_trim = trim(header_nonce)
@@ -70,7 +57,30 @@ exports.unbox = function (ciphertext, external_nonce, keys, attempts) {
         header_nonce_trim,
         key
       )
-      if(payload_key) return decrypt(payload_key)
+      if(payload_key) return payload_key
     }
   }
 }
+
+exports.unboxBody = function (ciphertext, external_nonce, payload_key) {
+  if(!payload_key) return
+  var header_length = offset(payload_key[32])
+
+  return unbox(
+    ciphertext.slice(header_length, ciphertext.length),
+    trim(hmac(
+      ciphertext.slice(0, header_length),
+      hmac(external_nonce, ciphertext.slice(0, 32))
+    )),
+    payload_key.slice(0, 32)
+  )
+
+  return decrypt(payload_key)
+
+}
+
+exports.unbox = function (ciphertext, external_nonce, keys, attempts) {
+  var payload_key = exports.unboxKey(ciphertext, external_nonce, keys, attempts)
+  if(payload_key) return exports.unboxBody(ciphertext, external_nonce, payload_key)
+}
+
