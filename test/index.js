@@ -12,6 +12,14 @@ var carol = hash(new Buffer('CAROL'))
 var nonce = new Buffer(24)
 nonce.fill(0)
 
+//TODO: need way more test coverage!
+
+function canDecrypt (t, ctxt, nonce, keys, attempts, plaintext) {
+  t.deepEqual(groupbox.unbox(ctxt, nonce, keys, attempts), plaintext)
+  var key = groupbox.unboxKey(ctxt, nonce, keys, attempts)
+  if(key)
+    t.deepEqual(groupbox.unboxBody(ctxt, nonce, key), plaintext)
+}
 
 tape('encrypt a simple message and decrypt it', function (t) {
 
@@ -19,11 +27,12 @@ tape('encrypt a simple message and decrypt it', function (t) {
   var ciphertext =
     groupbox.box(plaintext, nonce, [alice, bob])
 
-  t.deepEqual(groupbox.unbox(ciphertext, nonce, [bob], 2), plaintext)
-  t.deepEqual(groupbox.unbox(ciphertext, nonce, [alice], 2), plaintext)
-  t.deepEqual(groupbox.unbox(ciphertext, nonce, [carol], 2), undefined)
+  canDecrypt(t, ciphertext, nonce, [bob], 2, plaintext)
+  canDecrypt(t, ciphertext, nonce, [alice], 2, plaintext)
+  canDecrypt(t, ciphertext, nonce, [carol], 2, undefined)
+  canDecrypt(t, ciphertext, nonce, [bob], 1, undefined)
+  canDecrypt(t, ciphertext, nonce, [alice], 0, undefined)
 
   t.end()
 })
-
 
