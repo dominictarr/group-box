@@ -19,9 +19,9 @@ function offset(n) {
   return 32+recip_length*n
 }
 
-exports.box = function (plaintext, external_nonce, keys) {
-  var nonce = random(32)
-  var payload_key = random(32)
+exports.box = function (plaintext, external_nonce, keys, _payload_key, _nonce) {
+  var payload_key = _payload_key || random(32)
+  var nonce = _nonce || random(32)
   var header_nonce = hmac(external_nonce, nonce)
 
   var header = Buffer.concat([nonce].concat(keys.map(function (key) {
@@ -81,6 +81,4 @@ exports.unbox = function (ciphertext, external_nonce, keys, attempts) {
   var payload_key = exports.unboxKey(ciphertext, external_nonce, keys, attempts)
   if(payload_key) return exports.unboxBody(ciphertext, external_nonce, payload_key)
 }
-
-
 
