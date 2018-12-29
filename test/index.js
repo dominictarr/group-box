@@ -9,6 +9,8 @@ var alice = hash(new Buffer('ALICE'))
 var bob = hash(new Buffer('BOB'))
 var carol = hash(new Buffer('CAROL'))
 
+var eve = hash(new Buffer('EVE'))
+
 var nonce = new Buffer(24)
 nonce.fill(0)
 
@@ -33,6 +35,10 @@ tape('encrypt a simple message and decrypt it', function (t) {
   canDecrypt(t, ciphertext, nonce, [bob], 1, undefined)
   canDecrypt(t, ciphertext, nonce, [alice], 0, undefined)
 
+
+  t.notOk(groupbox.unbox(ciphertext, nonce, [eve], 8), 'eve cannot decrypt')
+
   t.end()
 })
+
 
