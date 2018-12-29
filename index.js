@@ -51,7 +51,7 @@ exports.unboxKey = function (ciphertext, external_nonce, keys, attempts) {
   var header_nonce_trim = trim(header_nonce)
   for(var i in keys) {
     var key = keys[i]
-    for(var j = 0; j < attempts; j++) {
+    for(var j = 0; j < attempts && offset(j+1) < ciphertext.length; j++) {
       payload_key = unbox(
         ciphertext.slice(offset(j), offset(j+1)),
         header_nonce_trim,
@@ -75,12 +75,12 @@ exports.unboxBody = function (ciphertext, external_nonce, payload_key) {
     payload_key.slice(0, 32)
   )
 
-  return decrypt(payload_key)
-
 }
 
 exports.unbox = function (ciphertext, external_nonce, keys, attempts) {
   var payload_key = exports.unboxKey(ciphertext, external_nonce, keys, attempts)
   if(payload_key) return exports.unboxBody(ciphertext, external_nonce, payload_key)
 }
+
+
 
